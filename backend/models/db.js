@@ -3,6 +3,14 @@
 // so user input is always escaped by the driver (no SQL injection through string building).
 const mysql = require('mysql2/promise');
 
+// Hosted databases (Aiven, PlanetScale ...) need an encrypted connection: set DB_SSL=true.
+// Put the provider's CA certificate (PEM text) in DB_SSL_CA to also verify the server.
+function sslOptions() {
+  if (process.env.DB_SSL !== 'true') return undefined;
+  const ca = process.env.DB_SSL_CA;
+  return ca ? { ca: ca.replace(/\\n/g, '\n'), rejectUnauthorized: true } : { rejectUnauthorized: false };
+}
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST || 'localhost',
   port: Number(process.env.DB_PORT || 3306),
@@ -15,6 +23,7 @@ const pool = mysql.createPool({
   decimalNumbers: true,     // DECIMAL -> JS number (amounts are rounded to cents in code)
   multipleStatements: false,
   charset: 'utf8mb4',
+  ssl: sslOptions(),
 });
 
 // Make MySQL's NOW()/CURDATE() use the same time zone as the Node process (TZ in .env, e.g. Asia/Colombo),

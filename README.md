@@ -187,6 +187,13 @@ Put it behind HTTPS (for example Nginx with a certificate), then set `COOKIE_SEC
 `mysqldump` is not available on Railway, so automatic backups are off there. Back up from your computer with
 `C:\xampp\mysql\bin\mysqldump.exe` or use Railway's volume backups.
 
+### Free option: Render (website) + Aiven (MySQL)
+Aiven free MySQL: create a service, copy its **Service URI**, run `node scripts/import-db.js "mysql://avnadmin:PASSWORD@HOST:PORT"`.
+Render: **New → Web Service** from the GitHub repo, Build command `npm run build`, Start command `npm start`, Instance type **Free**,
+and the same variables as above with `DB_HOST`/`DB_PORT`/`DB_USER=avnadmin`/`DB_PASSWORD` from Aiven, `DB_NAME=hospital_db`, `DB_SSL=true`.
+Free Render services sleep after 15 minutes without visitors (the first visit then takes up to a minute) and timed jobs
+(SMS reminders, stock check) only run while it is awake.
+
 ---
 
 ## Starter accounts
