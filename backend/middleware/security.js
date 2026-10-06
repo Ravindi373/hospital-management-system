@@ -25,7 +25,10 @@ function originAllowed(origin) {
 function csrfGuard(req, res, next) {
   if (SAFE.has(req.method)) return next();
   const origin = req.get('origin');
-  if (origin && !originAllowed(origin)) {
+  // The site's own address is always allowed (same-origin), so it works on any host name
+  // (Vercel preview links, a new tunnel link ...) without editing ALLOWED_ORIGINS.
+  const self = `${req.protocol}://${req.get('host')}`;
+  if (origin && origin !== self && !originAllowed(origin)) {
     return next(new HttpError(403, 'Request origin is not allowed.', 'BAD_ORIGIN'));
   }
   if (!req.get('x-requested-with')) {
