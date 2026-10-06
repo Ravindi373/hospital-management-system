@@ -1,0 +1,8 @@
+node_modules/
+frontend/dist/
+backups/
+logs/
+.env
+*.log
+backend/reset-admin.js
+backend/fix-db.js

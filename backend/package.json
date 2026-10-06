@@ -1,0 +1,28 @@
+{
+  "name": "hms-backend",
+  "version": "1.0.0",
+  "description": "Hospital Management System - REST API",
+  "main": "server.js",
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "backup": "node services/backupService.js --now",
+    "hash": "node -e \"require('bcryptjs').hash(process.argv[1],12).then(console.log)\""
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cookie-parser": "^1.4.6",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.1",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "mysql2": "^3.11.3",
+    "node-cron": "^3.0.3",
+    "nodemailer": "^6.10.1",
+    "zod": "^3.23.8"
+  }
+}
