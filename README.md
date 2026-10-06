@@ -194,6 +194,29 @@ and the same variables as above with `DB_HOST`/`DB_PORT`/`DB_USER=avnadmin`/`DB_
 Free Render services sleep after 15 minutes without visitors (the first visit then takes up to a minute) and timed jobs
 (SMS reminders, stock check) only run while it is awake.
 
+### Free permanent address: Vercel (website + API) + Aiven (MySQL)
+`vercel.json` and `api/index.js` run the API as a Vercel serverless function and serve the built website.
+1. Create the Aiven database and run `node scripts/import-db.js "<Aiven Service URI>"` (see above).
+2. vercel.com → **Add New → Project** → import the GitHub repository → leave Framework as *Other* and all build settings as they are.
+3. Environment Variables:
+   ```
+   APP_TIMEZONE=Asia/Colombo
+   DB_HOST / DB_PORT / DB_USER / DB_PASSWORD   (from Aiven)
+   DB_NAME=hospital_db
+   DB_SSL=true
+   DB_POOL_SIZE=3
+   TRUST_PROXY=1
+   COOKIE_SECURE=true
+   BACKUP_ENABLED=false
+   CRON_SECRET=<long random text>
+   ALLOWED_ORIGINS=https://YOUR-PROJECT.vercel.app
+   APP_URL=https://YOUR-PROJECT.vercel.app
+   HOSPITAL_NAME, HOSPITAL_PHONE, SMS_PROVIDER (+ Notify.lk keys)
+   ```
+Differences on Vercel: SMS are sent during the request instead of by the background worker; reminders and the
+pharmacy stock check run together once a day at 17:30 (Vercel Cron, `/api/cron/daily`); database backups are
+Aiven's own daily backups (the Backups page cannot run mysqldump there).
+
 ---
 
 ## Starter accounts

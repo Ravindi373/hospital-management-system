@@ -61,7 +61,11 @@ async function queue({ type, patientId, appointmentId = null, data = {}, text = 
       `INSERT INTO sms_messages (patient_id, appointment_id, phone, message, type, status, error, created_by, dedupe_key)
        VALUES (?,?,?,?,?,?,?,?,?)`,
       [patientId, appointmentId, number || String(to || '').slice(0, 20), message, type, status, error, userId, dedupeKey]);
-    if (status === 'queued') setImmediate(() => processQueue().catch(() => {}));
+    if (status === 'queued') {
+      // On Vercel the server stops as soon as the reply is sent, so send right away and wait for it.
+      if (process.env.VERCEL) await processQueue().catch((e) => console.error('SMS send', e.message));
+      else setImmediate(() => processQueue().catch(() => {}));
+    }
     return r.insertId;
   } catch (err) {
     if (err.code === 'ER_DUP_ENTRY') return null;      // reminder already queued
@@ -109,7 +113,7 @@ async function sendTwilio(to, message) {
 }
 
 function sendLog(to, message) {
-  const dir = path.resolve(__dirname, '../../logs');
+  const dir = require('./logDir')();
   fs.mkdirSync(dir, { recursive: true });
   fs.appendFileSync(path.join(dir, 'sms-outbox.log'), `${new Date().toISOString()}  to ${to}\n${message}\n\n`);
   return 'log';
@@ -124,11 +128,16 @@ async function deliver(to, message) {
 }
 
 // ---- worker ----
-let running = false;
+// One run at a time; a second call waits for the current run, then runs again
+// so a message queued meanwhile is never left behind.
+let current = null;
 async function processQueue() {
-  if (running) return;
-  running = true;
-  try {
+  while (current) await current.catch(() => {});
+  current = runQueue();
+  try { await current; } finally { current = null; }
+}
+async function runQueue() {
+  {
     const rows = await db.query(
       `SELECT id, phone, message, attempts FROM sms_messages
         WHERE status = 'queued' AND attempts < ? ORDER BY id LIMIT 20`, [MAX_ATTEMPTS]);
@@ -148,7 +157,7 @@ async function processQueue() {
         }
       }
     }
-  } finally { running = false; }
+  }
 }
 
 // Reminders for tomorrow's appointments (run once a day by the scheduler).

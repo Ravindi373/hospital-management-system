@@ -11,10 +11,21 @@ function allowedOrigins() {
     .split(',').map((s) => s.trim()).filter(Boolean);
 }
 
+// An entry may start with a wildcard sub-domain, e.g. https://*.trycloudflare.com
+// (matches https://any-words.trycloudflare.com but not https://trycloudflare.com.evil.com).
+function originAllowed(origin) {
+  return allowedOrigins().some((a) => {
+    if (a === origin) return true;
+    const m = a.match(/^(https?:\/\/)\*\.(.+)$/);
+    return !!m && origin.startsWith(m[1]) && /^[a-z0-9-]+$/i.test(origin.slice(m[1].length, -(m[2].length + 1)))
+      && origin.endsWith(`.${m[2]}`);
+  });
+}
+
 function csrfGuard(req, res, next) {
   if (SAFE.has(req.method)) return next();
   const origin = req.get('origin');
-  if (origin && !allowedOrigins().includes(origin)) {
+  if (origin && !originAllowed(origin)) {
     return next(new HttpError(403, 'Request origin is not allowed.', 'BAD_ORIGIN'));
   }
   if (!req.get('x-requested-with')) {
@@ -23,4 +34,4 @@ function csrfGuard(req, res, next) {
   return next();
 }
 
-module.exports = { csrfGuard, allowedOrigins };
+module.exports = { csrfGuard, allowedOrigins, originAllowed };

@@ -4,6 +4,7 @@
 const fs = require('fs');
 const path = require('path');
 const db = require('../models/db');
+const logDir = require('./logDir');
 
 let transporter = null;
 function mailer() {
@@ -31,7 +32,7 @@ async function sendEmail(to, subject, text) {
     if (t) {
       await t.sendMail({ from: process.env.MAIL_FROM || process.env.SMTP_USER, to, subject, text: body });
     } else {
-      const dir = path.resolve(__dirname, '../../logs');
+      const dir = logDir();
       fs.mkdirSync(dir, { recursive: true });
       fs.appendFileSync(path.join(dir, 'mail-outbox.log'),
         `==== ${new Date().toISOString()}\nTo: ${to}\nSubject: ${subject}\n\n${body}\n\n`);

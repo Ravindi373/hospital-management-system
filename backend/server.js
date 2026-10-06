@@ -2,6 +2,8 @@
 const path = require('path');
 const fs = require('fs');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });   // TZ in .env sets the server's time zone
+// Hosts that reserve TZ (Vercel) use APP_TIMEZONE instead, e.g. APP_TIMEZONE=Asia/Colombo.
+if (process.env.APP_TIMEZONE) process.env.TZ = process.env.APP_TIMEZONE;
 
 const express = require('express');
 const helmet = require('helmet');
@@ -48,6 +50,18 @@ app.use('/api', (req, res, next) => { res.set('Cache-Control', 'no-store'); next
 app.use('/api', csrfGuard);
 app.get('/api/health', async (req, res) => {
   try { await db.query('SELECT 1'); res.json({ ok: true }); } catch { res.status(503).json({ ok: false }); }
+});
+// Daily scheduled job for hosts without an always-on server (Vercel Cron calls this once a day).
+// Vercel sends "Authorization: Bearer <CRON_SECRET>"; without the secret the job cannot be started.
+app.get('/api/cron/daily', async (req, res) => {
+  const secret = process.env.CRON_SECRET;
+  if (!secret || req.get('authorization') !== `Bearer ${secret}`) return res.status(401).json({ error: 'Not allowed.' });
+  const out = {};
+  try { out.remindersQueued = await sms.queueReminders(); await sms.processQueue(); } catch (e) { out.smsError = e.message; }
+  try { await notifications.stockSummary(); out.stockCheck = 'done'; } catch (e) { out.stockError = e.message; }
+  try { await sessions.purgeExpired(); } catch { /* not critical */ }
+  await audit(null, 'DAILY_JOB', { user: { username: 'system' }, details: out });
+  return res.json(out);
 });
 app.use('/api', require('./routes'));
 app.use('/api', notFound);
