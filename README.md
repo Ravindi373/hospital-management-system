@@ -152,6 +152,43 @@ Put it behind HTTPS (for example Nginx with a certificate), then set `COOKIE_SEC
 
 ---
 
+## Hosting on Railway (website + MySQL in one place)
+
+1. Push the project to GitHub (`.env` must **not** be in the repository).
+2. railway.com → **New Project → Deploy from GitHub repo** → choose the repository.
+   The root `package.json` builds the website (`npm run build`) and starts the API (`npm start`).
+3. In the same project: **+ Create → Database → MySQL**.
+4. Create the tables from your own computer (in the `backend` folder), using the MySQL service's
+   **Connect → Public network** URL:
+   ```
+   node scripts/import-db.js "mysql://root:PASSWORD@HOST.proxy.rlwy.net:PORT"
+   ```
+5. App service → **Variables → Raw Editor**:
+   ```
+   NODE_ENV=production
+   TZ=Asia/Colombo
+   DB_HOST=${{MySQL.MYSQLHOST}}
+   DB_PORT=${{MySQL.MYSQLPORT}}
+   DB_USER=${{MySQL.MYSQLUSER}}
+   DB_PASSWORD=${{MySQL.MYSQLPASSWORD}}
+   DB_NAME=hospital_db
+   TRUST_PROXY=1
+   COOKIE_SECURE=true
+   ALLOWED_ORIGINS=https://YOUR-APP.up.railway.app
+   APP_URL=https://YOUR-APP.up.railway.app
+   BACKUP_ENABLED=false
+   HOSPITAL_NAME=City General Hospital
+   HOSPITAL_PHONE=011 269 1111
+   SMS_PROVIDER=log
+   ```
+6. App service → **Settings → Networking → Generate Domain**, put that address in `ALLOWED_ORIGINS` and `APP_URL`.
+7. Sign in as `admin` / `ChangeMe@2026` and set new passwords for every starter account.
+
+`mysqldump` is not available on Railway, so automatic backups are off there. Back up from your computer with
+`C:\xampp\mysql\bin\mysqldump.exe` or use Railway's volume backups.
+
+---
+
 ## Starter accounts
 
 All have the temporary password **`ChangeMe@2026`** and must set their own password at first sign-in.
