@@ -1,5 +1,7 @@
 # Hospital Management System (HMS)
 
+Live HMS : https://hospital-management-system-teal-phi.vercel.app/
+
 A web application for a hospital's front desk, doctors, laboratory, pharmacy, accounts and administration.
 Built with **React (Vite)**, **Node.js / Express** and **MySQL**, with role-based access control and
 security built in from the start.
