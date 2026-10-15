@@ -11,7 +11,6 @@ const TYPE = { APPT_BOOKED: 'Booking confirmed', APPT_RESCHEDULED: 'Rescheduled'
   APPT_REMINDER: 'Reminder', LAB_READY: 'Lab report ready', TEST: 'Test', PRIVATE: 'Private message' };
 const HOSPITAL = 'City General Hospital';
 const MAX = 300;
-const PROVIDER = { log: 'Log only (nothing is sent)', notifylk: 'Notify.lk', twilio: 'Twilio' };
 
 export default function Sms() {
   const toast = useToast();
@@ -24,7 +23,6 @@ export default function Sms() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const { data, error: loadErr, reload } = useLoad('/sms', { status, q });
-  const s = data && data.settings;
   const c = (data && data.counts) || {};
   const full = HOSPITAL.length + 2 + msg.trim().length;
   const parts = full <= 160 ? 1 : Math.ceil(full / 153);
@@ -43,18 +41,7 @@ export default function Sms() {
         <div className={`kpi ${c.failed ? 'alert' : ''}`}><span className="l">Failed</span><span className="v">{c.failed || 0}</span></div>
         <div className="kpi"><span className="l">Not sent</span><span className="v">{c.skipped || 0}</span><span className="small muted">opted out or invalid number</span></div>
       </div>
-      <div className="grid2">
-        <Panel title="SMS gateway" pad>
-          {s && (
-            <dl className="dl">
-              <dt>Status</dt><dd>{s.enabled ? <Chip tone="ok">On</Chip> : <Chip tone="bad">Off</Chip>}</dd>
-              <dt>Provider</dt><dd>{PROVIDER[s.provider] || s.provider} {!s.configured && <Chip tone="bad">Missing settings in .env</Chip>}</dd>
-              {s.senderId && <><dt>Sender ID</dt><dd className="mono">{s.senderId}</dd></>}
-              <dt>Reminders</dt><dd>Day before each appointment, schedule <span className="mono">{s.reminderSchedule}</span></dd>
-            </dl>
-          )}
-          {s && s.provider === 'log' && <p className="note" style={{ margin: '12px 0 0' }}>Messages are only written to <span className="mono">logs/sms-outbox.log</span>. To send real SMS, set <span className="mono">SMS_PROVIDER=notifylk</span> and your Notify.lk User ID and API key in <span className="mono">.env</span>, then restart the server.</p>}
-        </Panel>
+      <div className="grid2" style={{ gridTemplateColumns: 'minmax(0, 1fr)' }}>
         <Panel title="Send a private message" pad>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <Tabs value={to} onChange={(v) => { setTo(v); setError(''); }} items={[['patient', 'To a patient'], ['number', 'To a mobile number']]} />
